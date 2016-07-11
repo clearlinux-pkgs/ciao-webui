@@ -1,0 +1,136 @@
+From 72cf2ad62809eeba44f270297f443640e44d8c50 Mon Sep 17 00:00:00 2001
+From: "Simental Magana, Marcos" <marcos.simental.magana@intel.com>
+Date: Wed, 20 Jul 2016 14:16:11 +0000
+Subject: [PATCH] fix makefile
+
+---
+ Makefile      | 66 +++++++++++++++++++++++++++++++++++++----------------------
+ ciao-webui.sh | 11 ++++++----
+ 2 files changed, 48 insertions(+), 29 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 8ee5e14..238a33b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,10 @@
+ # Variable declaration
+ 
+-DESTDIR ?= /usr/local
++PREFIX ?= /usr
++LIBDIR ?= $(DESTDIR)$(PREFIX)/lib
++BINDIR ?= $(DESTDIR)$(PREFIX)/bin
++SYSCONFDIR ?= $(DESTDIR)/etc
++
+ NODE_ENV ?="production"
+ OS=$(shell uname)
+ NPM_LINK=$(shell npm bin -g)
+@@ -20,28 +24,39 @@ datamanager="$(jsStart)/data/dataManager.js$(jsEnd)"
+ loadDatamanager="<script type='text/javascript'>window.datamanager.loadData\(\(<%- JSON.stringify\(data\)%>\)\);</script>"
+ validations="$(jsStart)/javascripts/library/validations.js$(jsEnd)"
+ 
++.PHONY: build
++build:
++	-@echo "nothing to build"
++
++.PHONY: install
+ install:
+-	-mkdir -p public/javascripts/library
+-	-mkdir node_modules
+-	-mkdir -p build/stylesheets
+-	-cp views/default_template.ejs views/$(file)
+-	-cp css/css_framework/framework.css build/stylesheets
+-	-cp css/d3_components/d3Framework.css build/stylesheets
+-	-cp -r vendor/* node_modules/
+-	-cp js/util/*.js public/javascripts/library/
+-	sed -i.bak "s~$(subst $\",,$(match))~$(subst $\",,$(match))\\$(bootstrap)\\$(subst $\",,$(framework))\\$(subst $\",,$(d3))\\ $(subst $\",,$(jquery))\\$(subst $\",,$(jqueryui))\\$(subst $\",,$(datamanager))\\$(subst $\",,$(loadDatamanager))\\ $(subst $\",,$(validations))~" views/$(subst $\",,$(file))
+-	-mkdir -p $(DESTDIR)/ciao-webui/
+-	-mkdir -p $(DESTDIR)/share/ciao-webui
+-	-cp config/ciao_config.json $(DESTDIR)/share/ciao-webui/
+-	-cp -rf * $(DESTDIR)/ciao-webui/
+-	sed "s/\".\" #executable/\"$(subst $\/,\\/,$(DESTDIR))\"/" ./ciao-webui.sh > $(NPM_LINK)/ciao-webui
+-	chmod u+rx $(NPM_LINK)/ciao-webui
++	-@mkdir -p public/javascripts/library
++	-@mkdir node_modules
++	-@mkdir -p build/stylesheets
++	-@cp views/default_template.ejs views/$(file)
++	-@cp css/css_framework/framework.css build/stylesheets
++	-@cp css/d3_components/d3Framework.css build/stylesheets
++	-@cp -r vendor/* node_modules/
++	-@cp js/util/*.js public/javascripts/library/
++	-@sed -i.bak "s~$(subst $\",,$(match))~$(subst $\",,$(match))\\$(bootstrap)\\$(subst $\",,$(framework))\\$(subst $\",,$(d3))\\ $(subst $\",,$(jquery))\\$(subst $\",,$(jqueryui))\\$(subst $\",,$(datamanager))\\$(subst $\",,$(loadDatamanager))\\ $(subst $\",,$(validations))~" views/$(subst $\",,$(file))
++	-mkdir -p $(BINDIR)
++	-mkdir -p $(LIBDIR)/ciao-webui/
++	-mkdir -p $(SYSCONFDIR)/ciao-webui
++	-cp config/ciao_config.json $(SYSCONFDIR)/ciao-webui/
++	-cp -rf * $(LIBDIR)/ciao-webui/
++	-sed -e "s|##SYSCONFDIR##|$(SYSCONFDIR)|"  \
++             -e "s|\".\" #executable|$(DESTDIR)|"  \
++             -e "s|##LIBDIR##|$(LIBDIR)|"  \
++             ciao-webui.sh > $(BINDIR)/ciao-webui
++	-chmod 755 $(BINDIR)/ciao-webui
+ 
++.PHONY: uninstall
+ uninstall:
+-	-rm $(DESTDIR)/share/ciao-webui/ciao_config.json
+-	-rm -r /usr/local/ciao-webui
+-	-rm $(NPM_LINK)/ciao-webui
++	-rm $(SYSCONFDIR)/ciao-webui/ciao_config.json
++	-rm -r $(LIBDIR)/usr/local/ciao-webui
++	-rm $(BINDIR)/ciao-webui
+ 
++.PHONY: install-dev
+ install-dev:
+ 	# Update/download the required dependencies for the project
+ 	-cp -r vendor/* node_modules/
+@@ -68,13 +83,14 @@ install-dev:
+ 	-cp css/d3_components/d3Framework.css build/stylesheets
+ 	-cp js/util/*.js public/javascripts/library/
+ 	sed -i.bak "s~$(subst $\",,$(match))~$(subst $\",,$(match))\\$(bootstrap)\\$(subst $\",,$(framework))\\$(subst $\",,$(d3))\\ $(subst $\",,$(jquery))\\$(subst $\",,$(jqueryui))\\$(subst $\",,$(datamanager))\\$(subst $\",,$(loadDatamanager))\\ $(subst $\",,$(validations))~" views/$(subst $\",,$(file))
+-	-mkdir -p $(DESTDIR)/ciao-webui/
+-	-mkdir -p $(DESTDIR)/share/ciao-webui
+-	-cp config/ciao_config.json $(DESTDIR)/share/ciao-webui/
+-	-cp -rf * $(DESTDIR)/ciao-webui/
+-	sed "s/\".\" #executable/\"$(subst $\/,\\/,$(DESTDIR))\"/" ./ciao-webui.sh > $(NPM_LINK)/ciao-webui
+-	chmod u+rx $(NPM_LINK)/ciao-webui
++	-mkdir -p $(LIBDIR)/ciao-webui/
++	-mkdir -p $(SYSCONFDIR)/ciao-webui
++	-cp config/ciao_config.json $(SYSCONFDIR)/ciao-webui/
++	-cp -rf * $(LIBDIR)/ciao-webui/
++	sed "s/\".\" #executable/\"$(subst $\/,\\/,$(DESTDIR))\"/" ./ciao-webui.sh > $(BINDIR)/ciao-webui
++	chmod 755 $(BINDIR)/ciao-webui
+ 
++.PHONY: clean
+ clean:
+ 	-rm -rf node_modules
+ 	-rm build/javascripts/.*js
+diff --git a/ciao-webui.sh b/ciao-webui.sh
+index 8170537..a1de81c 100755
+--- a/ciao-webui.sh
++++ b/ciao-webui.sh
+@@ -1,7 +1,9 @@
+ #!/bin/bash
+-OS=`uname`
++OS=$(uname)
+ LOCATION="." #executable
+-CONFIG_FILE="config_file=$LOCATION/share/ciao-webui/ciao_config.json"
++LIBDIR=##LIBDIR##
++SYSCONFDIR=##SYSCONFDIR##
++CONFIG_FILE="${SYSCONFDIR}/ciao-webui/ciao_config.json"
+ 
+ if [ "$1" == "" ]; then
+     env="production"
+@@ -13,8 +15,9 @@ echo "Environment: "$env
+ export NODE_ENV=$env
+ 
+ if [ "$2" == "" ]; then
+-    node $LOCATION/ciao-webui/bin/www "$CONFIG_FILE"
++    node ${LIBDIR}/ciao-webui/bin/www "config_file=${CONFIG_FILE}"
+ 
+ else
+-    node $LOCATION/ciao-webui/bin/www " $@"
++    node ${LIBDIR}/ciao-webui/bin/www " $@"
+ fi
++
+-- 
+2.7.4
+
