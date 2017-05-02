@@ -4,7 +4,7 @@
 #
 Name     : ciao-webui
 Version  : 1.2.8.14
-Release  : 2
+Release  : 3
 URL      : https://github.com/01org/ciao-webui/archive/v1.2.8.14.tar.gz
 Source0  : https://github.com/01org/ciao-webui/archive/v1.2.8.14.tar.gz
 Source1  : ciao-webui.service
